@@ -5,6 +5,8 @@ date: "1/5/2023"
 output: html_document
 ---
 
+View: https://rpubs.com/sharonma1218/stats306ch04 
+
 # Stats 306: Lab 01 & Ch 01-04 
 
 ## Lab 1: Installing Jupyter Notebook and R
@@ -225,5 +227,4 @@ IMPORTANT: Changes to proportions!
 ggsave("insertname.png") # saves the most recent plot
 ```
 
-View: https://rpubs.com/sharonma1218/stats306ch04
 
