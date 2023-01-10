@@ -225,5 +225,5 @@ IMPORTANT: Changes to proportions!
 ggsave("insertname.png") # saves the most recent plot
 ```
 
-
+View: https://rpubs.com/sharonma1218/stats306ch04
 
