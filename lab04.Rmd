@@ -1,0 +1,284 @@
+---
+title: "lab04"
+author: "Sharon Ma"
+date: "1/26/2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Lab 04
+
+```{r}
+install.packages('ggplot2')
+install.packages('dplyr')
+install.packages('babynames')
+install.packages('nycflights13')
+install.packages('tidyr')
+```
+
+```{r}
+options(warn=-1)
+
+library(babynames)
+library(ggplot2)
+library(dplyr)
+library(nycflights13)
+library(tidyverse)
+```
+
+```{r}
+df <- data.frame(student = c("A", "B", "C"), 
+                 age = c(10,11,10), 
+                 test_1 = c(99,90,93), 
+                 test_2 = c(89,97,92))
+df
+```
+
+```{r}
+df %>%
+  pivot_longer(cols = c(test_1, test_2), names_to = "test", values_to = "score")
+```
+
+```{r}
+df %>%
+  pivot_longer(cols = c(test_1, test_2), 
+               names_to = "test", 
+               values_to = "score", 
+               names_prefix = "test_")
+```
+
+```{r}
+df %>% rename(test1 = test_1) %>%
+  pivot_longer(cols = c(test1, test_2), 
+               names_to = "test", 
+               values_to = "score", 
+               names_prefix = "test_") # it will stay the same if it doens't match
+```
+
+```{r}
+df2 <- data.frame(year = c("2021", "2020", "2019", "2018"), 
+                  f_6 = c(89, 85, 90, 91), 
+                  f_7 = c(88, 86, 91, 93), 
+                  f_8 = c(90, 84, 92, 92), 
+                  m_6 = c(89, 86, 90, 90), 
+                  m_7 = c(88, 87, 92, 89), 
+                  m_8 = c(91, 84, 92, 91) )
+df2
+```
+
+```{r}
+df2 %>%
+  pivot_longer(cols = !year, # this is equivalent to c(f_6, f_7, f_8, m_6, m_7, m_8)
+               names_to = c("sex", "grade"), # notice the order here matters
+               names_sep = "_", # it will be NA if something doesn't match
+               values_to = "score")
+```
+
+```{r}
+df2 %>%
+  pivot_longer(cols = !year, 
+               names_to = c("sex", "grade"), 
+               names_pattern = "(f|m)_(\\d+)", 
+               values_to = "score")
+```
+
+## Exercises
+
+1. For the 5 carriers with the most flights in the flights dataset, create a scatterplot of number of flights by mean delay, colored by delay type. To do this, you'll have to reshape the data so that delay type is a column.
+
+```{r}
+# ex 1
+flights%>%
+  group_by(carrier)%>%
+  summarize(arrival=mean(arr_delay,na.rm=T),
+            departure=mean(dep_delay,na.rm=T),
+            n=n())%>%
+  arrange(desc(n))%>%
+  head(5)%>%
+  print
+```
+
+```{r}
+# ex 2
+flights%>%
+  group_by(carrier)%>%
+  summarize(arrival=mean(arr_delay,na.rm=T),
+            departure=mean(dep_delay,na.rm=T),
+            n=n())%>%
+  arrange(desc(n))%>%
+  head(5)%>%
+  pivot_longer(cols=c(arrival,departure),
+               names_to="delay_type",
+               values_to="average_delay")%>%
+  print
+# these two ex's show the diff b/w orig & pivot longer 
+```
+
+```{r}
+flights%>%
+  group_by(carrier)%>%
+  summarize(arrival=mean(arr_delay,na.rm=T),
+            departure=mean(dep_delay,na.rm=T),
+            n=n())%>%
+  arrange(desc(n))%>%
+  head(5)%>%
+  pivot_longer(cols=c(arrival,departure),
+               names_to="delay_type",
+               values_to="average_delay")%>%
+  ggplot()+
+  geom_point(aes(x=n,y=average_delay,color=delay_type),size=3)
+```
+
+2. Take a look at the iris dataset (you shouldn't need to load anything new). This dataset contains measurements of different flowers belonging to three species. The dataset has five columns: Species, Sepal.Length, Sepal.Width, Petal.Length, and Petal.Width. Reshape this dataset so each row contains the following information: the species, the location of the measurement (sepal or petal), the type of measurement (length or width), and then the corresponding average measurement for flowers in that species.
+
+```{r}
+iris
+```
+
+```{r}
+iris%>%head(5)
+```
+
+```{r}
+iris%>%
+  group_by(Species)%>%
+  summarize(across(Sepal.Width:Petal.Length,mean))%>%
+  print
+```
+
+```{r}
+iris%>%
+  group_by(Species)%>%
+  summarize(across(Sepal.Width:Petal.Length,mean))%>%
+  pivot_longer(cols=!Species,
+               names_to=c("location","measurement_type"),
+               values_to="measurement",
+               names_sep="\\.")%>%
+  print
+
+# across function applies the mean function across all objects 
+ summarize(sepal.length=mean(sepal.length),
+          sepal.width=mean(sepal.width),
+          petal.length=mean(petal.length),
+          petal.width=mean(petal.width))
+```
+
+```{r}
+
+# the across function applies the mean function across all objects, so it's the 
+# same as: 
+
+iris%>%
+  group_by(Species)%>%
+  summarize(Sepal.Length=mean(Sepal.Length),
+          Sepal.Width=mean(Sepal.Width),
+          Petal.Length=mean(Petal.Length),
+          Petal.Width=mean(Petal.Width))%>%
+  pivot_longer(cols=!Species,
+               names_to=c("location","measurement_type"),
+               values_to="measurement",
+               names_sep="\\.")%>%
+  print
+```
+
+```{r}
+df3 <- data.frame(student = c("A", "A", "B", "B", "C", "C"), 
+                  age = c(10,10,11,11,10,10), 
+                  test = c(1,2,1,2,1,2), 
+                  score = c(99,89,90,97,93,92))
+df3
+```
+
+```{r}
+df3 %>%
+  pivot_wider(names_from = test, values_from = score, names_prefix = "test_")
+```
+
+```{r}
+df3 %>%
+  pivot_wider(id_cols = !age, names_from = test, values_from = score, names_prefix = "test_")
+```
+
+```{r}
+df4 <- data.frame(student = c("Logan", "Logan", "Ryan", "Ryan", "Jordan", "Jordan"), 
+                  gender = c('M', 'F', 'M', 'F', 'M', 'F'), 
+                  final_grade = c(99,89,90,97,93,92))
+df4
+```
+
+
+```{r}
+df4 %>%
+  pivot_wider(names_from = c(student, gender), 
+              values_from = final_grade, 
+              names_sep = '~') # by default is _
+```
+
+```{r}
+df4 %>%
+  pivot_wider(names_from = c(student, gender), 
+              values_from = final_grade, 
+              names_sep = '~') # by default is _
+```
+
+## Pivot Wider Exercises 
+
+3. How many popular gender neutral names are there in 2015? Reshape the babynames dataset so that each name is a row, and use that dataframe to find out how many names were given to at least 1,000 babies of each sex in 2015.
+
+```{r}
+babynames%>%
+  select(year,name,sex,n)%>%
+  pivot_wider(names_from=sex,values_from=n)%>%
+  filter(F>=1000 & M>=1000 & year==2015)%>%
+  print
+# there were 11 gender neutral names in 2015 
+```
+
+4. How does the number of Delta (DL) flights compare to the number of United (UA) flights on each day? Reshape the flights dataset so that each row has five columns (year, month, day, the number of Delta flights on that day, and the number of United flights on that day).
+
+```{r}
+flights%>%
+  filter(carrier=="UA"|carrier=="DL")%>%
+  group_by(year,month,day,carrier)%>%
+  summarize(n=n())%>%
+  print
+```
+
+```{r}
+flights%>%
+  filter(carrier=="UA"|carrier=="DL")%>%
+  group_by(year,month,day,carrier)%>%
+  summarize(n=n())%>%
+  pivot_wider(names_from="carrier",values_from=n)%>%
+  head()%>%
+  print
+```
+
+## Hints for HW3
+1b&1c: get the proportion of NA values
+
+```{r}
+x=c(1,2,3,NA,5,6,7,NA,NA,10) # non-numeric vrs
+mean(is.na(x)) # mean for everything in x that is not NA 
+is.na(x) # whether or not everything in x is NA (T/F)
+
+as.numeric(TRUE) # 1 represents true
+as.numeric(FALSE) # 0 represents false 
+
+mean(c(0,0,0,1,0,0,0,1,1,0)) # numeric vrs 
+```
+
+1a
+
+```{r}
+iris%>%
+  group_by(Species)%>%
+  summarize(petal_avg=mean(Petal.Length))%>%
+  ggplot(aes(x=Species,y=petal_avg))+
+  geom_bar(stat='identity')
+```
+
+
